@@ -254,10 +254,10 @@ end
 
 local function parsed_json_to_results(data, output_file, consoleOut)
   local tests = {}
-
   for _, testResult in pairs(data.testResults) do
     local testFn = testResult.name
 
+    if testResult.assertionResults == nil then return tests end
     for _, assertionResult in pairs(testResult.assertionResults) do
       local status, name = assertionResult.status, assertionResult.title
 
@@ -330,7 +330,6 @@ function adapter.build_spec(args)
   if pos.type == "namespace" then
     testNamePattern = "^ " .. escapeTestPattern(pos.name)
   end
-
   local binary = args.vitestCommand or getVitestCommand(pos.path)
   local config = getVitestConfig(pos.path) or "vitest.config.js"
   local command = vim.split(binary, "%s+")
@@ -370,13 +369,11 @@ function adapter.build_spec(args)
         if not new_results or new_results == "" then
           return {}
         end
-
         local ok, parsed = pcall(vim.json.decode, new_results, { luanil = { object = true } })
 
         if not ok or not parsed.testResults then
           return {}
         end
-
         return parsed_json_to_results(parsed, results_path, nil)
       end
     end,
